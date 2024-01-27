@@ -99,3 +99,10 @@ connect it for us.
 
 
 ### Lesson 3 : Mongoose Validations
+
+validate: [
+      (value) => {
+        // Validations can be done inside this functions
+      },
+      "Please Enter an Valid Email",
+    ],

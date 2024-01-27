@@ -1,5 +1,20 @@
 const User = require("../models/User");
 
+const handleErrors = (err) => {
+  let errors = { email: "", password: "" };
+
+  if (err.message.includes("user validation failed")) {
+    // Check if something failed
+    console.log(Object.values(err.errors));
+    Object.values(err.errors).forEach((properties) => {
+      console.log(properties);
+      errors[properties.path] = properties.message;
+    });
+  }
+
+  return errors;
+};
+
 module.exports.signup_get = (req, res) => {
   console.log("jeje");
   res.render("signup"); // return the signup view.
@@ -12,7 +27,8 @@ module.exports.signup_post = async (req, res) => {
     const user = await User.create({ email, password });
     res.status(201).json(user);
   } catch (err) {
-    res.status(400).send("Error !! , User not created", err);
+    const errors = handleErrors(err);
+    res.status(400).json(errors);
   }
 };
 
