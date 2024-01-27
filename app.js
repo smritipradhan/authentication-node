@@ -10,11 +10,11 @@ app.use(express.static("public"));
 // view engine
 app.set("view engine", "ejs");
 
-app.use(express.json);
+app.use(express.json());
 
 // database connection
 const dbURI =
-  "mongodb+srv://smritipradhan545:smritipradhan545@cluster0.lq9q1p4.mongodb.net/node-auth";
+  "mongodb+srv://smritipradhan545:<password>@cluster0.lq9q1p4.mongodb.net/node-auth";
 mongoose
   .connect(dbURI, {
     useNewUrlParser: true,
