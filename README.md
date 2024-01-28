@@ -1,7 +1,22 @@
 Date : 24th Jan 2024
 
-### Setup Authentication using Node, Express, Mongo using Mongoose
-- We will be using JSON Web Tokens to implement Authentication. They are one way of implementing authentication.
+Agenda :-
+1.Connecting Appication to MongoDB
+2.Adding Routes and Controllers
+3.User Model and Schema
+4.Mongoose Validations
+5.Mongoose Hook (pre & post)
+6.Hashing Passwords (salt)
+7.Views (SignUp and Login)
+8.Cookies Primer
+9.JSON Web Tokens
+10.Error Handling
+11.Login and Error Handling
+12.Protecting Routes (authGuards)
+13.Logout
+
+### Lesson 1 Setup Authentication using Node, Express, Mongo using Mongoose
+- We will be using JSON Web Tokens in Cookies to implement Authentication. They are one way of implementing authentication.
 
 ejs - for views
 express - node framework
@@ -9,7 +24,7 @@ mongoose
 
 app.js
 
-Imports 
+```
 const express = require("express");
 const mongoose = require("mongoose");
 
@@ -19,7 +34,7 @@ app.use(express.static("public")); -> we can serve static files like css in the 
 // view engine
 app.set("view engine", "ejs"); -> for our views we are using ejs.
 
-const dbURI =#
+const dbURI =
   "mongodb+srv://<username>:<passsword>@cluster0.lq9q1p4.mongodb.net/<dbname>
 mongoose
   .connect(dbURI, {
@@ -30,7 +45,7 @@ mongoose
   .then((result) => app.listen(3000))
   .catch((err) => console.log(err));
 
-  // Database connection.
+```
 
 ### Lesson 2 : Adding Routes and Controllers for Authentication
 
@@ -70,10 +85,9 @@ Sending this when we submit the forms.
 
 ### Lesson 3 : User Model
 
-we will use mongoose. We are going to create Schema, besically we define how these different objects are going to look or different documents are going to look inside the 
-database.
+we will use mongoose. We are going to create Schema, besically we define how these different objects are going to look or different documents are going to look inside the database.
 
-
+```
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
@@ -90,22 +104,27 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-export const User = mongoose.model("user", userSchema); // The Name should be singular of the Collection. We called our collection Users. Mongoose will look into out database and 
+export const User = mongoose.model("user", userSchema); 
+```
+// The Name should be singular of the Collection. We called our collection Users. Mongoose will look into out database and 
 connect it for us.
 
+User.create({}) -> create an instance of User locally for us and then saved it inside the database.
+User.create({ email, password });  -> This is an asynchronous Task, which will return a promise.
 
-  User.create({}) -> create an instance of User locally for us and then saved it inside the database.
-  User.create({ email, password });  -> This is an asynchronous Task, which will return a promise.
 
+### Lesson 4 : Mongoose Validations
 
-### Lesson 3 : Mongoose Validations
-
+Callback function is provided in Model to validate
+```
 validate: [
       (value) => {
         // Validations can be done inside this functions
       },
       "Please Enter an Valid Email",
     ],
+
+```    
 
 ```
 const handleErrors = (err) => {
@@ -147,10 +166,10 @@ const handleErrors = (err) => {
 };
 ```
 
-### Lesson 4 : Mongoose Hooks
+### Lesson 5 : Mongoose Hooks
 
 Store hashed Version of the Password. The user password will be hashed and protected. 
-Decrypt.
+bcrypt.
 Fires after some mongoose event happen eg. create , delete .
 
 // Fire a function after doc saved to DB
@@ -181,7 +200,7 @@ new user was created and Saved {
 }
 ```
 
-### Lesson 5 : Hashing Passwords
+### Lesson 6 : Hashing Passwords
 
 We should always hash a password before User Document is created. Now we know how to use a hook. Pre Hook . Hash the user password.
 we get the password using this password.
@@ -197,7 +216,6 @@ userSchema.pre("save", async function (next) {
 
   const salt = await bcrypt.genSalt();
   this.password = await bcrypt.hash(this.password, salt); // Takes two arguement
-  console.log("New User will be created !!", this);
   next();
 });
 ```
@@ -217,7 +235,7 @@ Returns
 }
 
 
-### Lesson 6 : Sign Up and login Views -> Auth Views
+### Lesson 7 : Sign Up and login Views -> Auth Views
 
 ```
 <script>
@@ -232,10 +250,9 @@ Returns
         console.log(email,password)
     })
 </script>
-
 ```
 
-### Lesson 7: Cookies Primer
+### Lesson 8: Cookies Primer
 
 We will learn about JSON WebTokens and Cookies and how they are going to work.
 Cookies
@@ -262,7 +279,7 @@ app.get("/read-cookies", (req, res) => {
 
 ```
 
-### Lesson 8 : Json Web Tokens
+### Lesson 9 : Json Web Tokens
 
 When User logins to our application.The browser sends requests to our server with username and password. Our server checks the username and password(credentilas) and if valid send back Jwt in Cookie to uniquely identify the User. Now as long as the cookie is there , the user is condiered to be logged In and authenticated.
 
@@ -271,7 +288,7 @@ Now the User has the Json Web Tokens stored in their cookie in their browser.Coo
 The Cross Site Request Forgery Attacks. - https://owasp.org/www-community/attacks/csrf
 JWT - https://jwt.io/
 
-### Lesson 10s : New User Sign Up - JSON Web Tokens
+### Lesson 10 : New User Sign Up - JSON Web Tokens
 
 We want the User to sign up and send the Email and Password to the Server. We will
 1. Hash the password and store it into the DB
@@ -408,14 +425,13 @@ module.exports.login_post = async (req, res) => {
     const user = await User.login(email, password); // using the function which we created in the Model
     res.status(200).json({ user: user._id });
   } catch (err) {
-    console.log(err);
     const errors = handleErrors(err);
     res.status(400).json({ errors });
   }
 };
 
 ```
-### Lesson 14 : LOGIN - handling passwords in a better way
+### Lesson 14 : LOGIN - handling Errors in a better way
 
 Handle the Errors in a better way.
 
@@ -473,4 +489,57 @@ module.exports.logout_get = (req, res) => {
   res.redirect("/");
 };
 
+```
+
+### Lesson 17.Checking if User Exists For Conditional Rendering and Accessing data of User
+
+Checking the jsonwebtoken for exitence of user and providing the views
+```
+const checkUser = (req, res, next) => {
+  const token = req.cookies.jwt; // Get the token from the cookies
+  if (token) {
+    // If tokens exists check for the verification of the jsonwebstoken
+    jwt.verify(token, "secret-code", async (err, decodedToken) => {
+      if (err) {
+        res.locals.user = null;
+        next();
+      } else {
+        let user = await User.findById(decodedToken.id);
+        res.locals.user = user;
+        next();
+      }
+    });
+  } else {
+    res.locals.user = null;
+    next();
+  }
+};
+```
+
+Views
+```
+ <nav>
+      <h1><a href="/">Ninja Smoothies</a></h1>
+      <ul>
+        <% if(user) { %>
+        <li>Welcome, <%=user.email%></li>
+        <li>
+          <h1><a href="/logout">Logout</a></h1>
+        </li>
+        <% } else { %>
+        <li>
+          <h1><a href="/login">Login</a></h1>
+        </li>
+        <li>
+          <h1><a href="/signup" class="btn">Sign Up</a></h1>
+        </li>
+        <% } %>
+      </ul>
+    </nav>
+
+```    
+
+Adding it to every get call route.Can be handled in frontend too.
+```
+app.get("*", checkUser);
 ```
