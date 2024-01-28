@@ -2,10 +2,12 @@ const User = require("../models/User");
 
 const handleErrors = (err) => {
   let errors = { email: "", password: "" };
+  if (err.code === 11000) {
+    errors.email = "Email  already exists.";
+  }
 
   if (err.message.includes("user validation failed")) {
     // Check if something failed
-    console.log(Object.values(err.errors));
     Object.values(err.errors).forEach((properties) => {
       console.log(properties);
       errors[properties.path] = properties.message;
@@ -16,7 +18,6 @@ const handleErrors = (err) => {
 };
 
 module.exports.signup_get = (req, res) => {
-  console.log("jeje");
   res.render("signup"); // return the signup view.
 };
 

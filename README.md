@@ -106,3 +106,43 @@ validate: [
       },
       "Please Enter an Valid Email",
     ],
+
+```
+const handleErrors = (err) => {
+  let errors = { email: "", password: "" };
+
+  if (err.message.includes("user validation failed")) {
+    // Check if something failed
+    Object.values(err.errors).forEach((properties) => {
+      console.log(properties);
+      errors[properties.path] = properties.message;
+    });
+  }
+
+  return errors;
+};
+```
+
+Note : For unique dont have any error message
+{
+    "email":"smritipradhan545@gmail.com",
+    "password":"123"
+}
+
+We need to look into the error codes.
+
+```
+const handleErrors = (err) => {
+  console.log(err.code);
+
+  let errors = { email: "", password: "" };
+  if (err.code === 11000) {
+    errors.email = "Email  already exists.";
+  }
+
+  ------------
+  ------------
+  
+  return errors;
+};
+```
