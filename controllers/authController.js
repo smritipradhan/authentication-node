@@ -1,4 +1,8 @@
+const cookie = require("cookie-parser");
 const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+
+const maxAge = 3 * 24 * 60 * 60; //store max age->3 days. expects in seconds
 
 const handleErrors = (err) => {
   let errors = { email: "", password: "" };
@@ -16,27 +20,40 @@ const handleErrors = (err) => {
 
   return errors;
 };
+// ------------ GNERATE JSON WEB TOKEN ------------
+const generateJSONToken = (id) => {
+  // id will be used for generating the JSON Web Token.Sign method to sign our JWT
+  return jwt.sign({ id }, "secret here", {
+    expiresIn: maxAge,
+  }); // Donot publish in repositories
+};
 
+// ------------ SIGNUP GET CALL ------------
 module.exports.signup_get = (req, res) => {
   res.render("signup"); // return the signup view.
 };
 
+// ------------ SIGNUP POST CALL ------------
 module.exports.signup_post = async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const user = await User.create({ email, password });
-    res.status(201).json(user);
+    const token = generateJSONToken(user._id); // Generate the Token
+    res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
+    res.status(201).json({ user: user._id });
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json(errors);
   }
 };
 
+// ------------ LOGIN GET CALL ------------
 module.exports.login_get = (req, res) => {
   res.render("login");
 };
 
+// ------------ LOGIN POST CALL ------------
 module.exports.login_post = (req, res) => {
   res.render("login");
 };

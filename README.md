@@ -5,7 +5,7 @@ Date : 24th Jan 2024
 
 ejs - for views
 express - node framework
-mongoose - 
+mongoose 
 
 app.js
 
@@ -146,3 +146,167 @@ const handleErrors = (err) => {
   return errors;
 };
 ```
+
+### Lesson 4 : Mongoose Hooks
+
+Store hashed Version of the Password. The user password will be hashed and protected. 
+Decrypt.
+Fires after some mongoose event happen eg. create , delete .
+
+// Fire a function after doc saved to DB
+userSchema.post("save", function (doc, next) {
+  console.log("new user was created and Saved", doc);
+  next();
+});
+
+// Fire a function before doc saved to DB
+userSchema.pre("save", function (next) {
+  // We don't get the doc because it is not yet saved into the Database
+  console.log("New User will be created !!", this);
+  next();
+});
+
+
+```
+New User will be created !! {
+  _id: 65b5dc1a5590a1eebd7101e8,
+  email: 'anamika@gmail.com',
+  password: '1234567890'
+}
+new user was created and Saved {
+  _id: 65b5dc1a5590a1eebd7101e8,
+  email: 'anamika@gmail.com',
+  password: '1234567890',
+  __v: 0
+}
+```
+
+### Lesson 5 : Hashing Passwords
+
+We should always hash a password before User Document is created. Now we know how to use a hook. Pre Hook . Hash the user password.
+we get the password using this password.
+
+ --->  npm install bcrypt 
+
+ Salt + Hashing Algorithm.
+ Add Salt then hash it then hashed password. 
+
+```
+userSchema.pre("save", async function (next) {
+  // We don't get the doc because it is not yet saved into the Database
+
+  const salt = await bcrypt.genSalt();
+  this.password = await bcrypt.hash(this.password, salt); // Takes two arguement
+  console.log("New User will be created !!", this);
+  next();
+});
+```
+
+{
+    "email":"smritipradhan545@gmail.com",
+    "password":"test@123"
+}
+
+Returns
+
+{
+    "_id": "65b5e2b505bfa7fcd727ab10",
+    "email": "smritipradhan545@gmail.com",
+    "password": "$2b$10$QcRrYyBNJHOe2pRhpMZ8CuBIhycQgVJJgPgVqZdL7vCBAMjE2g3Ku",
+    "__v": 0
+}
+
+
+### Lesson 6 : Sign Up and login Views -> Auth Views
+
+```
+<script>
+    const form = document.querySelector('form');
+    form.addEventListener('submit',(e)=>{
+        e.preventDefault();
+
+        // Get the Values
+        const email = form.email.value;
+        const password = form.password.value;
+
+        console.log(email,password)
+    })
+</script>
+
+```
+
+### Lesson 7: Cookies Primer
+
+We will learn about JSON WebTokens and Cookies and how they are going to work.
+Cookies
+
+- Store Data in a User's browser.
+- That data can be anything we want.
+- Google Analytics
+
+Request is sent to server , we can create a cookie and what data the cookie will hold. The server will send back the cookie to the browser.
+CSRF mitigation strategies.
+
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+```
+app.get("/set-cookies", (req, res) => {
+  res.cookie("newuser", false);
+  res.send("you the cookie!");
+});
+
+app.get("/read-cookies", (req, res) => {
+  const cookie = req.cookies;
+  res.send(cookie);
+});
+
+```
+
+### Lesson 8 : Json Web Tokens
+
+When User logins to our application.The browser sends requests to our server with username and password. Our server checks the username and password(credentilas) and if valid send back Jwt in Cookie to uniquely identify the User. Now as long as the cookie is there , the user is condiered to be logged In and authenticated.
+
+Now the User has the Json Web Tokens stored in their cookie in their browser.Cookies are sent to the serve for every request they make.eg for new pages in he website.Server will verify and decode it to identify the User. If valid, the User is shown the protected data. 
+
+The Cross Site Request Forgery Attacks. - https://owasp.org/www-community/attacks/csrf
+JWT - https://jwt.io/
+
+### Lesson 11 : New User Sign Up - JSON Web Tokens
+
+We want the User to sign up and send the Email and Password to the Server. We will
+1. Hash the password and store it into the DB
+2. Instantly log the user in (Create JWT for them)
+
+We will verify everytime  the JWT is untouched  when the user sends an request. 
+
+In the Sign Up
+
+```
+<script>
+  const form = document.querySelector("form");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // Get the Values
+    const email = form.email.value;
+    const password = form.password.value;
+
+    console.log(email, password);
+
+    try {
+      const res = await fetch("./signup", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  });
+</script>
+
+```
+We will be sending the data in by JSON.stringify and not directly.Now when the User Logs in , immediate log the User Inside
+
+--- > npm install jsonwebtoken 
+Generate the jsonwetoken and send it back to the browser inside a cookie.
