@@ -18,12 +18,22 @@ const handleErrors = (err) => {
     });
   }
 
+  // Incorrect Email
+  if (err.message === "Incorrect Email!!") {
+    errors.email = "Email  does not Exist";
+  }
+
+  // Incorrect Password
+  if (err.message === "Incorrect Password!!") {
+    errors.password = "Password  does not Exist";
+  }
+
   return errors;
 };
 // ------------ GNERATE JSON WEB TOKEN ------------
 const generateJSONToken = (id) => {
   // id will be used for generating the JSON Web Token.Sign method to sign our JWT
-  return jwt.sign({ id }, "secret here", {
+  return jwt.sign({ id }, "secret-key", {
     expiresIn: maxAge,
   }); // Donot publish in repositories
 };
@@ -44,7 +54,7 @@ module.exports.signup_post = async (req, res) => {
     res.status(201).json({ user: user._id });
   } catch (err) {
     const errors = handleErrors(err);
-    res.status(400).json(errors);
+    res.status(400).json({ errors });
   }
 };
 
@@ -54,6 +64,22 @@ module.exports.login_get = (req, res) => {
 };
 
 // ------------ LOGIN POST CALL ------------
-module.exports.login_post = (req, res) => {
-  res.render("login");
+module.exports.login_post = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    // We will try to login
+    const user = await User.login(email, password);
+    const token = generateJSONToken(user._id); // Generate the Token
+    res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
+    res.status(200).json({ user: user._id });
+  } catch (err) {
+    const errors = handleErrors(err);
+    res.status(400).json({ errors });
+  }
+};
+
+module.exports.logout_get = (req, res) => {
+  //Delete the JST token, we cant delete but we can replace with blank and small expiry time with 1 ms
+  res.cookie("jwt", "", { maxAge: 1 });
+  res.redirect("/");
 };

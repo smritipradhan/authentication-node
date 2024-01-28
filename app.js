@@ -1,6 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
+const cookieParser = require("cookie-parser");
+const { authGuard, checkUser } = require("./middleware/authGuard");
 
 const app = express();
 
@@ -11,6 +13,7 @@ app.use(express.static("public"));
 app.set("view engine", "ejs");
 
 app.use(express.json());
+app.use(cookieParser());
 
 // database connection
 const dbURI =
@@ -25,6 +28,7 @@ mongoose
   .catch((err) => console.log(err));
 
 // routes
+app.get("*", checkUser);
 app.get("/", (req, res) => res.render("home"));
-app.get("/smoothies", (req, res) => res.render("smoothies"));
+app.get("/smoothies", authGuard, (req, res) => res.render("smoothies"));
 app.use(authRoutes);

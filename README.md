@@ -271,7 +271,7 @@ Now the User has the Json Web Tokens stored in their cookie in their browser.Coo
 The Cross Site Request Forgery Attacks. - https://owasp.org/www-community/attacks/csrf
 JWT - https://jwt.io/
 
-### Lesson 11 : New User Sign Up - JSON Web Tokens
+### Lesson 10s : New User Sign Up - JSON Web Tokens
 
 We want the User to sign up and send the Email and Password to the Server. We will
 1. Hash the password and store it into the DB
@@ -310,3 +310,167 @@ We will be sending the data in by JSON.stringify and not directly.Now when the U
 
 --- > npm install jsonwebtoken 
 Generate the jsonwetoken and send it back to the browser inside a cookie.
+
+### Lesson 11 : New User Sign Up - JSON Web Tokens
+
+```
+module.exports.signup_post = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.create({ email, password });
+    const token = generateJSONToken(user._id); // Generate the Token
+    res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
+    res.status(201).json({ user: user._id });
+  } catch (err) {
+    const errors = handleErrors(err);
+    res.status(400).json(errors);
+  }
+};
+```
+
+```
+const generateJSONToken = (id) => {
+  // id will be used for generating the JSON Web Token.Sign method to sign our JWT
+  return jwt.sign({ id }, "secret-here", {
+    expiresIn: maxAge,
+  }); // Donot publish in repositories
+};
+
+```
+
+### Lesson 12 : New User Sign Up 
+
+```
+<script>
+  const form = document.querySelector("form");
+  const emailError = document.querySelector(".email.error");
+  const passwordError = document.querySelector(".password.error");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    emailError.textContent = "";
+    passwordError.textContent = "";
+
+    // Get the Values
+    const email = form.email.value;
+    const password = form.password.value;
+
+    try {
+      const res = await fetch("./signup", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      console.log(data);
+
+      if (data.errors) {
+        emailError.textContent = data.errors.email;
+        passwordError.textContent = data.errors.password;
+      }
+
+      if (data.user) {
+        location.assign("/");
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  });
+</script>
+
+```
+
+### Lesson 13 : LOGIN
+
+Compare the hash passwords
+```
+// Static Method to Login the User
+userSchema.statics.login = async function (email, password) {
+  const user = await this.findOne({ email });
+  if (user) {
+    const auth = await bcrypt.compare(password, user.password); // Comparing the password and the hash password
+    if (auth) {
+      return user;
+    }
+    throw Error("Incorrect Password!!");
+  }
+  throw Error("Incorrect Email!!");
+};
+```
+
+```
+module.exports.login_post = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    // We will try to login
+    const user = await User.login(email, password); // using the function which we created in the Model
+    res.status(200).json({ user: user._id });
+  } catch (err) {
+    console.log(err);
+    const errors = handleErrors(err);
+    res.status(400).json({ errors });
+  }
+};
+
+```
+### Lesson 14 : LOGIN - handling passwords in a better way
+
+Handle the Errors in a better way.
+
+```
+  // Incorrect Email
+  if (err.message === "Incorrect Email!!") {
+    errors.email = "Email  does not Exist";
+  }
+
+  // Incorrect Password
+  if (err.message === "Incorrect Password!!") {
+    errors.password = "Password  does not Exist";
+  }
+
+```
+Add in the errorHandler we created
+
+### Lesson 15 : Protecting Routes
+
+We check if the JWT is valid or not. When the User log in , we can check if the token is valid by sending the token to the server back 
+and checking.
+
+1. We need to check if the jwt exits in the cookie
+2. We need to check the token is not tampered.
+
+We create a middleware which check this jwt stuff .
+
+```
+const jwt = require("jsonwebtoken");
+
+const authGuard = (req, res, next) => {
+  const token = req.cookies.jwt; // Get the token from the cookies
+  if (token) {
+    // If tokens exists check for the verification of the jsonwebstoken
+    jwt.verify(token, "secret-key", (err, decodedToken) => {
+      if (err) {
+        res.redirect("/login");
+      } else {
+        next();
+      }
+    });
+  } else {
+  }
+};
+
+module.exports = { authGuard };
+```
+### Lesson 16 : Logout
+
+Deleting the JSON Web Token
+```
+module.exports.logout_get = (req, res) => {
+  //Delete the JST token, we cant delete but we can replace with blank and small expiry time with 1 ms
+  res.cookie("jwt", "", { maxAge: 1 });
+  res.redirect("/");
+};
+
+```
