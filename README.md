@@ -1,5 +1,6 @@
 Date : 24th Jan 2024
 
+```
 Agenda :-
 1.Connecting Appication to MongoDB
 2.Adding Routes and Controllers
@@ -14,7 +15,7 @@ Agenda :-
 11.Login and Error Handling
 12.Protecting Routes (authGuards)
 13.Logout
-
+```
 ### Lesson 1 Setup Authentication using Node, Express, Mongo using Mongoose
 - We will be using JSON Web Tokens in Cookies to implement Authentication. They are one way of implementing authentication.
 
